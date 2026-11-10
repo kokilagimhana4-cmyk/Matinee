@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matinee: movies and TV, always up to date</title>
+<meta name="description" content="Open-source movie and TV discovery site. It updates itself from TMDB, so nobody has to add titles by hand.">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=Noto+Sans+Sinhala:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#171021;--surface:#241a33;--line:#3b2d50;--ink:#f4eef8;--muted:#a99bb8;--accent:#ff6b81;--r:10px;--pad:clamp(1rem,4vw,3rem)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.55 'Bricolage Grotesque','Noto Sans Sinhala',system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:1rem;padding:.75rem var(--pad);background:rgba(23,16,33,.88);backdrop-filter:blur(8px)}
+.logo{font-weight:800;font-size:1.6rem;letter-spacing:-.04em;color:var(--accent)}
+#q{margin-left:auto;width:min(17rem,55vw);background:var(--surface);border:1px solid var(--line);color:var(--ink);padding:.55rem 1rem;border-radius:999px;font:inherit}
+.hero{position:relative;display:flex;align-items:flex-end;min-height:min(68vh,540px);padding:var(--pad);background:var(--surface) center/cover}
+.hero::before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,var(--bg) 4%,transparent 60%),linear-gradient(90deg,rgba(23,16,33,.88),transparent 65%)}
+.hero>div{position:relative;max-width:36rem}
+h1{font-size:clamp(2rem,6vw,3.8rem);line-height:1.05;font-weight:800;letter-spacing:-.03em}
+.hero p{margin:.8rem 0 1.2rem;color:#e3d8ec;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.btn{background:var(--accent);color:#2a0710;border:0;border-radius:var(--r);padding:.7rem 1.3rem;font-weight:600}
+.btn.alt{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+section{padding:1.6rem var(--pad) 0}
+h2{font-size:1.3rem;margin-bottom:.8rem}
+.row{display:flex;gap:.9rem;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:1rem;scrollbar-width:thin}
+.card{flex:none;position:relative;width:9.5rem;border:0;background:none;padding:0;text-align:left;scroll-snap-align:start}
+.poster{display:block;position:relative;z-index:1;aspect-ratio:2/3;border-radius:var(--r);overflow:hidden;background:var(--surface);transition:transform .2s}
+.card:hover .poster,.card:focus-visible .poster{transform:scale(1.04)}
+.poster img{display:block;width:100%;height:100%;object-fit:cover}
+.ph{display:grid;place-items:center;height:100%;padding:.6rem;text-align:center;font-weight:600;background:linear-gradient(160deg,#3a2858,#1f1530)}
+.top .card{width:14.5rem}
+.top .poster{width:9.5rem;margin-left:auto}
+.rank{position:absolute;left:0;bottom:-.4rem;font-size:8rem;font-weight:800;line-height:1;letter-spacing:-.1em;color:transparent;-webkit-text-stroke:3px #7a62a0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(9.5rem,1fr));gap:1rem}
+.grid .card{width:auto}
+dialog{border:0;border-radius:14px;background:var(--surface);color:var(--ink);width:min(46rem,94vw);max-height:90vh;padding:0;overflow:auto}
+dialog::backdrop{background:rgba(10,6,16,.78)}
+.media{aspect-ratio:16/9;background:#000 center/cover}
+.media iframe{width:100%;height:100%;border:0}
+.close{position:absolute;top:.6rem;right:.6rem;z-index:2;width:2.4rem;height:2.4rem;border-radius:50%;border:0;background:rgba(23,16,33,.85);font-size:1.2rem}
+.body{padding:1.2rem 1.4rem 1.6rem}
+.meta{color:var(--muted);margin:.3rem 0 .8rem}
+footer{padding:2.5rem var(--pad);color:var(--muted);font-size:.85rem;max-width:60rem}
+footer a{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">Matinee</span>
+  <input id="q" type="search" placeholder="Search movies and shows" aria-label="Search movies and shows" autocomplete="off">
+</header>
+
+<div class="hero" id="hero">
+  <div>
+    <h1 id="ht">Movies and TV, always up to date</h1>
+    <p id="ho">Trending titles, new releases and what is coming soon. This page updates itself, so nobody has to add films by hand.</p>
+    <button class="btn" id="hb" hidden>More info</button>
+  </div>
+</div>
+
+<main>
+  <div id="results" hidden></div>
+  <div id="rows"></div>
+</main>
+
+<dialog id="m" aria-labelledby="mt">
+  <div style="position:relative">
+    <button class="close" aria-label="Close">✕</button>
+    <div class="media" id="md"></div>
+  </div>
+  <div class="body">
+    <h2 id="mt" style="font-size:1.7rem"></h2>
+    <p class="meta" id="mm"></p>
+    <p id="mo"></p>
+    <p class="meta" id="mw" style="margin-top:1rem"></p>
+    <button class="btn" id="mb" hidden style="margin-top:.6rem">Play trailer</button>
+  </div>
+</dialog>
+
+<footer>
+  Matinee is a free, open-source project (MIT license). It lists titles and trailers only and does not host or stream films.
+  This product uses the TMDB API but is not endorsed or certified by <a href="https://www.themoviedb.org">TMDB</a>.
+  Streaming availability data is provided by JustWatch through TMDB.
+</footer>
+
+<script>
+/* ---- Settings: edit these three lines ---- */
+const CONFIG = {
+  TMDB_KEY: "",      // free key from https://www.themoviedb.org/settings/api
+  LANG: "en-US",     // e.g. "si-LK" for Sinhala where TMDB has translations
+  REGION: "LK"       // two-letter country code used for cinema and streaming info
+};
+/* ------------------------------------------ */
+
+const API = "https://api.themoviedb.org/3", IMG = "https://image.tmdb.org/t/p/";
+const ROWS = [
+  {title: "Trending now", path: "/trending/all/day", top: true},
+  {title: "In cinemas", path: "/movie/now_playing", type: "movie"},
+  {title: "Popular movies", path: "/movie/popular", type: "movie"},
+  {title: "Popular TV shows", path: "/tv/popular", type: "tv"},
+  {title: "Top rated movies", path: "/movie/top_rated", type: "movie"},
+  {title: "Coming soon", path: "/movie/upcoming", type: "movie"}
+];
+const $ = s => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const DEMO = !CONFIG.TMDB_KEY;
+const demoItems = Array.from({length: 10}, (_, i) => ({
+  id: i, title: "Sample title " + (i + 1), media_type: "movie", vote_average: 7 + i / 10,
+  overview: "Demo mode. Add your free TMDB key at the top of index.html to see real titles that update automatically."
+}));
+
+async function api(path, params = {}) {
+  if (DEMO) return {results: demoItems};
+  const u = new URL(API + path);
+  u.search = new URLSearchParams({api_key: CONFIG.TMDB_KEY, language: CONFIG.LANG, region: CONFIG.REGION, ...params});
+  const r = await fetch(u);
+  if (!r.ok) throw new Error("TMDB " + r.status);
+  return r.json();
+}
+
+function makeCard(it, i, top) {
+  const t = it.title || it.name, b = el("button", "card");
+  b.setAttribute("aria-label", t);
+  if (top) { const n = el("span", "rank", i + 1); n.setAttribute("aria-hidden", "true"); b.append(n); }
+  const p = el("span", "poster");
+  if (it.poster_path) { const im = el("img"); im.src = IMG + "w342" + it.poster_path; im.alt = ""; im.loading = "lazy"; p.append(im); }
+  else p.append(el("span", "ph", t));
+  b.append(p);
+  b.onclick = () => openModal(it);
+  return b;
+}
+
+function setHero(it) {
+  if (!it) return;
+  if (it.backdrop_path) $("#hero").style.backgroundImage = `url(${IMG}w1280${it.backdrop_path})`;
+  $("#ht").textContent = it.title || it.name;
+  $("#ho").textContent = it.overview || "";
+  $("#hb").hidden = false;
+  $("#hb").onclick = () => openModal(it);
+}
+
+async function buildRows() {
+  let heroDone = false;
+  for (const r of ROWS) {
+    const s = el("section", r.top ? "top" : ""), row = el("div", "row");
+    s.append(el("h2", "", r.title), row);
+    $("#rows").append(s);
+    try {
+      const d = await api(r.path);
+      const items = d.results.filter(x => x.media_type !== "person" && (x.poster_path || DEMO)).slice(0, r.top ? 10 : 20);
+      items.forEach(x => { x.media_type = x.media_type || r.type; });
+      row.append(...items.map((x, i) => makeCard(x, i, r.top)));
+      if (r.top && !heroDone) { setHero(items.find(x => x.backdrop_path) || items[0]); heroDone = true; }
+    } catch (e) {
+      s.append(el("p", "meta", "Could not load this row. Check your TMDB key and your connection."));
+    }
+  }
+}
+
+const dlg = $("#m");
+async function openModal(it) {
+  const y = (it.release_date || it.first_air_date || "").slice(0, 4);
+  $("#mt").textContent = it.title || it.name;
+  $("#mm").textContent = [y, it.vote_average ? it.vote_average.toFixed(1) + " / 10" : "", it.media_type === "tv" ? "TV show" : "Movie"].filter(Boolean).join(", ");
+  $("#mo").textContent = it.overview || "No description yet.";
+  $("#mw").textContent = "";
+  $("#mb").hidden = true;
+  $("#md").replaceChildren();
+  $("#md").style.backgroundImage = it.backdrop_path ? `url(${IMG}w780${it.backdrop_path})` : "";
+  dlg.showModal();
+  if (DEMO) return;
+  try {
+    const d = await api(`/${it.media_type}/${it.id}`, {append_to_response: "videos,watch/providers"});
+    const v = (d.videos?.results || []).find(x => x.site === "YouTube" && x.type === "Trailer");
+    if (v) {
+      $("#mb").hidden = false;
+      $("#mb").onclick = () => {
+        const f = el("iframe");
+        f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.key)}?autoplay=1`;
+        f.allow = "autoplay; encrypted-media; fullscreen";
+        f.title = "Trailer";
+        $("#md").replaceChildren(f);
+      };
+    }
+    const pr = d["watch/providers"]?.results?.[CONFIG.REGION]?.flatrate;
+    $("#mw").textContent = pr?.length ? `Streaming in ${CONFIG.REGION}: ` + pr.map(x => x.provider_name).join(", ") : `No streaming info for ${CONFIG.REGION} yet.`;
+  } catch (e) { /* details are optional */ }
+}
+dlg.addEventListener("close", () => $("#md").replaceChildren());
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+$(".close").onclick = () => dlg.close();
+
+let timer;
+$("#q").addEventListener("input", e => {
+  clearTimeout(timer);
+  const q = e.target.value.trim();
+  timer = setTimeout(() => runSearch(q), 350);
+});
+async function runSearch(q) {
+  const box = $("#results");
+  $("#rows").hidden = !!q;
+  box.hidden = !q;
+  if (!q) return;
+  const d = await api("/search/multi", {query: q}).catch(() => ({results: []}));
+  const items = d.results.filter(x => x.media_type !== "person" && (x.poster_path || DEMO));
+  const grid = el("div", "grid");
+  grid.append(...items.map(x => makeCard(x, 0, false)));
+  box.replaceChildren(el("h2", "", items.length ? `Results for “${q}”` : `Nothing found for “${q}”. Try another title.`), grid);
+  box.style.padding = "1.6rem var(--pad) 0";
+}
+
+buildRows();
+</script>
+</body>
+</html>
